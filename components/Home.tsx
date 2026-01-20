@@ -4,9 +4,11 @@ import { Search, Zap, MessageCircle, TrendingUp, ChevronRight, LayoutTemplate, U
 
 interface HomeProps {
   setViewState: (view: ViewState) => void;
+  userEmail?: string;
+  onSignOut?: () => void;
 }
 
-const Home: React.FC<HomeProps> = ({ setViewState }) => {
+const Home: React.FC<HomeProps> = ({ setViewState, userEmail, onSignOut }) => {
   return (
     <div className="flex flex-col min-h-screen bg-white font-sans text-black selection:bg-black selection:text-white">
       
@@ -29,16 +31,31 @@ const Home: React.FC<HomeProps> = ({ setViewState }) => {
         
         {/* Utility Bar (Profile Access) */}
         <div className="flex justify-between items-end px-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">
-                Menu Principal
-            </span>
-            <button 
-                onClick={() => setViewState(ViewState.USER_PROFILE)}
-                className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:bg-gray-100 px-3 py-1.5 rounded-full transition-all"
-            >
-                <User className="w-3 h-3" />
-                Meu Perfil
-            </button>
+            <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">
+                    Menu Principal
+                </span>
+                {userEmail && (
+                  <p className="text-[10px] text-gray-400 mt-1">{userEmail}</p>
+                )}
+            </div>
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick={() => setViewState(ViewState.USER_PROFILE)}
+                    className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:bg-gray-100 px-3 py-1.5 rounded-full transition-all"
+                >
+                    <User className="w-3 h-3" />
+                    Meu Perfil
+                </button>
+                {onSignOut && (
+                  <button
+                    onClick={onSignOut}
+                    className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase hover:bg-gray-100 px-3 py-1.5 rounded-full transition-all"
+                  >
+                    Sair
+                  </button>
+                )}
+            </div>
         </div>
 
         {/* Mentoria Button - The Centerpiece */}
