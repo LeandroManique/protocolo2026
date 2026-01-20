@@ -4,6 +4,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const KIWIFY_WEBHOOK_TOKEN = process.env.KIWIFY_WEBHOOK_TOKEN;
+const KIWIFY_WEBHOOK_DEBUG = process.env.KIWIFY_WEBHOOK_DEBUG === "true";
 
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
@@ -72,9 +73,71 @@ const pickHeader = (req: any, name: string): string | null => {
   return null;
 };
 
-const verifyHmacSignature = (rawBody: string, signature: string, secret: string): boolean => {
-  if (!rawBody) return false;
-  const digest = createHmac("sha256", secret).update(rawBody, "utf8").digest();
+const stableStringify = (value: any): string => {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  const keys = Object.keys(value).sort();
+  const entries = keys.map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`);
+  return `{${entries.join(",")}}`;
+};
+
+const safeDecode = (value: string): string | null => {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return null;
+  }
+};
+
+const extractFormPayloads = (rawBody: string): string[] => {
+  if (!rawBody || !rawBody.includes("=")) return [];
+  const params = new URLSearchParams(rawBody);
+  const payloads: string[] = [];
+  for (const key of ["payload", "data", "body", "event"]) {
+    const value = params.get(key);
+    if (value) payloads.push(value);
+  }
+  return payloads;
+};
+
+const collectSignaturePayloads = (rawBody: string, body: any): string[] => {
+  const candidates = new Set<string>();
+  const add = (value: string | null | undefined) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (trimmed) candidates.add(trimmed);
+  };
+
+  add(rawBody);
+  const decoded = rawBody ? safeDecode(rawBody) : null;
+  if (decoded && decoded !== rawBody) add(decoded);
+
+  for (const payload of extractFormPayloads(rawBody)) {
+    add(payload);
+    const decodedPayload = safeDecode(payload);
+    if (decodedPayload && decodedPayload !== payload) add(decodedPayload);
+  }
+
+  if (body && typeof body === "object") {
+    add(JSON.stringify(body));
+    add(stableStringify(body));
+  }
+
+  return Array.from(candidates);
+};
+
+const verifyHmacSignature = (
+  payload: string,
+  signature: string,
+  secret: string,
+  algorithm: "sha256" | "sha1"
+): boolean => {
+  if (!payload) return false;
+  const digest = createHmac(algorithm, secret).update(payload, "utf8").digest();
   const hex = digest.toString("hex");
   const base64 = digest.toString("base64");
   const signatureBuffer = Buffer.from(signature);
@@ -84,6 +147,15 @@ const verifyHmacSignature = (rawBody: string, signature: string, secret: string)
   }
   if (signature.length === base64.length) {
     return timingSafeEqual(Buffer.from(base64), signatureBuffer);
+  }
+  return false;
+};
+
+const verifySignatureMatch = (rawBody: string, body: any, signature: string, secret: string) => {
+  const payloads = collectSignaturePayloads(rawBody, body);
+  for (const payload of payloads) {
+    if (verifyHmacSignature(payload, signature, secret, "sha256")) return true;
+    if (verifyHmacSignature(payload, signature, secret, "sha1")) return true;
   }
   return false;
 };
@@ -215,8 +287,16 @@ export default async function handler(req: any, res: any) {
     );
     const signatureTokenMatch = signature && signature === KIWIFY_WEBHOOK_TOKEN;
     const signatureMatch =
-      !!signature && verifyHmacSignature(rawBody, signature, KIWIFY_WEBHOOK_TOKEN);
+      !!signature && verifySignatureMatch(rawBody, body, signature, KIWIFY_WEBHOOK_TOKEN);
     if (!tokenMatch && !signatureTokenMatch && !signatureMatch) {
+      if (KIWIFY_WEBHOOK_DEBUG) {
+        console.warn("Kiwify webhook signature mismatch", {
+          hasSignature: !!signature,
+          signatureLength: signature?.length ?? 0,
+          rawBodyLength: rawBody.length,
+          contentType: pickHeader(req, "content-type"),
+        });
+      }
       sendJson(res, 401, { error: "Invalid webhook token" });
       return;
     }
