@@ -7,6 +7,7 @@ import ProfileAuditor from './components/ProfileAuditor';
 import SEOOptimizer from './components/SEOOptimizer';
 import UserProfile from './components/UserProfile';
 import LegalDoc from './components/LegalDoc';
+import NewsPage from './components/NewsPage';
 import { ViewState } from './types';
 import { supabase } from './services/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
@@ -15,7 +16,12 @@ import AccessBlocked from './components/AccessBlocked';
 import LoadingScreen from './components/LoadingScreen';
 
 const App: React.FC = () => {
-  const [viewState, setViewState] = useState<ViewState>(ViewState.HOME);
+  const [viewState, setViewState] = useState<ViewState>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/news') {
+      return ViewState.NEWS;
+    }
+    return ViewState.HOME;
+  });
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [accessStatus, setAccessStatus] = useState<'loading' | 'active' | 'inactive'>('loading');
@@ -40,6 +46,21 @@ const App: React.FC = () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/news') {
+        setViewState(ViewState.NEWS);
+        return;
+      }
+      if (viewState === ViewState.NEWS) {
+        setViewState(ViewState.HOME);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [viewState]);
 
   const normalizeStatus = (value: string | null) => {
     const normalized = (value ?? '').toLowerCase();
@@ -100,29 +121,40 @@ const App: React.FC = () => {
     setSession(null);
   };
 
+  const handleSetViewState = useCallback((view: ViewState) => {
+    setViewState(view);
+    if (view === ViewState.NEWS && window.location.pathname !== '/news') {
+      window.history.pushState({}, '', '/news');
+    } else if (view === ViewState.HOME && window.location.pathname === '/news') {
+      window.history.pushState({}, '', '/');
+    }
+  }, []);
+
   const renderView = () => {
     switch (viewState) {
       case ViewState.CHAT:
-        return <ChatInterface setViewState={setViewState} />;
+        return <ChatInterface setViewState={handleSetViewState} />;
       case ViewState.SCRIPT_GENERATOR:
-        return <ScriptGenerator setViewState={setViewState} />;
+        return <ScriptGenerator setViewState={handleSetViewState} />;
       case ViewState.STRATEGIES:
-        return <StrategiesFeed setViewState={setViewState} />;
+        return <StrategiesFeed setViewState={handleSetViewState} />;
+      case ViewState.NEWS:
+        return <NewsPage onBack={() => handleSetViewState(ViewState.HOME)} />;
       case ViewState.PROFILE_AUDITOR:
-        return <ProfileAuditor setViewState={setViewState} />;
+        return <ProfileAuditor setViewState={handleSetViewState} />;
       case ViewState.SEO_OPTIMIZER:
-        return <SEOOptimizer setViewState={setViewState} />;
+        return <SEOOptimizer setViewState={handleSetViewState} />;
       case ViewState.USER_PROFILE:
-        return <UserProfile setViewState={setViewState} />;
+        return <UserProfile setViewState={handleSetViewState} />;
       case ViewState.LEGAL_TERMS:
-        return <LegalDoc setViewState={setViewState} type="terms" />;
+        return <LegalDoc setViewState={handleSetViewState} type="terms" />;
       case ViewState.LEGAL_PRIVACY:
-        return <LegalDoc setViewState={setViewState} type="privacy" />;
+        return <LegalDoc setViewState={handleSetViewState} type="privacy" />;
       case ViewState.HOME:
       default:
         return (
           <Home
-            setViewState={setViewState}
+            setViewState={handleSetViewState}
             userEmail={session?.user?.email ?? undefined}
             onSignOut={handleSignOut}
           />

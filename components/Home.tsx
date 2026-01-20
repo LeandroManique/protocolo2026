@@ -118,7 +118,7 @@ const Home: React.FC<HomeProps> = ({ setViewState, userEmail, onSignOut }) => {
 
              {/* Strategies */}
              <button 
-              onClick={() => setViewState(ViewState.STRATEGIES)}
+              onClick={() => setViewState(ViewState.NEWS)}
               className="bg-white p-6 hover:bg-black hover:text-white transition-colors duration-500 group text-left flex items-center justify-between"
             >
               <div>

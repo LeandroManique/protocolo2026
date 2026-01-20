@@ -11,5 +11,9 @@
       "destination": "https://www.ojogodoalgoritmo.com/:path*",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    { "source": "/news", "destination": "/" },
+    { "source": "/news/:path*", "destination": "/" }
   ]
 }
