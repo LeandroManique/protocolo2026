@@ -1,0 +1,12 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "ojogodoalgoritmo.com" }
+      ],
+      "destination": "https://www.ojogodoalgoritmo.com/:path*",
+      "permanent": true
+    }
+  ]
+}
