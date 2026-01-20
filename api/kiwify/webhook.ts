@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -6,16 +7,27 @@ const KIWIFY_WEBHOOK_TOKEN = process.env.KIWIFY_WEBHOOK_TOKEN;
 
 const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 
-const readJsonBody = async (req: any): Promise<any> => {
-  if (req.body) {
-    if (typeof req.body === "string") {
-      try {
-        return JSON.parse(req.body);
-      } catch (error) {
-        return {};
-      }
-    }
-    return req.body;
+const safeParseJson = (value: string | null): any => {
+  if (!value) return {};
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return {};
+  }
+};
+
+const readBody = async (req: any): Promise<{ rawBody: string; body: any }> => {
+  if (typeof req.body === "string") {
+    return { rawBody: req.body, body: safeParseJson(req.body) };
+  }
+  if (Buffer.isBuffer(req.body)) {
+    const rawBody = req.body.toString("utf8");
+    return { rawBody, body: safeParseJson(rawBody) };
+  }
+  if (req.body && typeof req.body === "object") {
+    // Best-effort fallback if body parsing already consumed the stream.
+    const rawBody = JSON.stringify(req.body);
+    return { rawBody, body: req.body };
   }
 
   const chunks: Buffer[] = [];
@@ -23,19 +35,54 @@ const readJsonBody = async (req: any): Promise<any> => {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   if (!chunks.length) {
-    return {};
+    return { rawBody: "", body: {} };
   }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch (error) {
-    return {};
-  }
+  const rawBody = Buffer.concat(chunks).toString("utf8");
+  return { rawBody, body: safeParseJson(rawBody) };
 };
 
 const sendJson = (res: any, status: number, payload: Record<string, unknown>) => {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(payload));
+};
+
+const normalizeSignature = (value: unknown): string | null => {
+  if (!value) return null;
+  if (Array.isArray(value)) {
+    return normalizeSignature(value[0]);
+  }
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().replace(/^sha256=/i, "");
+  if (!trimmed) return null;
+  if (/^[0-9a-f]+$/i.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+  return trimmed;
+};
+
+const pickHeader = (req: any, name: string): string | null => {
+  const value = req.headers?.[name];
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  if (typeof value === "string") return value;
+  return null;
+};
+
+const verifyHmacSignature = (rawBody: string, signature: string, secret: string): boolean => {
+  if (!rawBody) return false;
+  const digest = createHmac("sha256", secret).update(rawBody, "utf8").digest();
+  const hex = digest.toString("hex");
+  const base64 = digest.toString("base64");
+  const signatureBuffer = Buffer.from(signature);
+
+  if (signature.length === hex.length) {
+    return timingSafeEqual(Buffer.from(hex), signatureBuffer);
+  }
+  if (signature.length === base64.length) {
+    return timingSafeEqual(Buffer.from(base64), signatureBuffer);
+  }
+  return false;
 };
 
 const extractEmail = (value: any): string | null => {
@@ -148,20 +195,24 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const body = await readJsonBody(req);
+  const { rawBody, body } = await readBody(req);
   const headerToken =
-    (req.headers["x-kiwify-token"] as string | undefined) ||
-    (req.headers["x-kiwify-signature"] as string | undefined) ||
-    (req.headers["authorization"] as string | undefined)?.replace("Bearer ", "");
+    pickHeader(req, "x-kiwify-token") ||
+    (pickHeader(req, "authorization") || "").replace("Bearer ", "");
   const queryToken = req.query?.token;
-  const querySignature = req.query?.signature;
-  const bodyToken = body?.token || body?.webhook_token || body?.signature;
+  const signature =
+    normalizeSignature(pickHeader(req, "x-kiwify-signature")) ||
+    normalizeSignature(req.query?.signature) ||
+    normalizeSignature(body?.signature);
+  const bodyToken = body?.token || body?.webhook_token;
 
   if (KIWIFY_WEBHOOK_TOKEN) {
-    const tokenMatch = [headerToken, queryToken, querySignature, bodyToken].some(
+    const tokenMatch = [headerToken, queryToken, bodyToken].some(
       (token) => token && token === KIWIFY_WEBHOOK_TOKEN
     );
-    if (!tokenMatch) {
+    const signatureMatch =
+      !!signature && verifyHmacSignature(rawBody, signature, KIWIFY_WEBHOOK_TOKEN);
+    if (!tokenMatch && !signatureMatch) {
       sendJson(res, 401, { error: "Invalid webhook token" });
       return;
     }
