@@ -1,4 +1,7 @@
 {
+  "env": {
+    "NODE_OPTIONS": "--no-deprecation"
+  },
   "redirects": [
     {
       "source": "/:path*",
