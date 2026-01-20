@@ -24,21 +24,24 @@ const readBody = async (req: any): Promise<{ rawBody: string; body: any }> => {
     const rawBody = req.body.toString("utf8");
     return { rawBody, body: safeParseJson(rawBody) };
   }
-  if (req.body && typeof req.body === "object") {
-    // Best-effort fallback if body parsing already consumed the stream.
-    const rawBody = JSON.stringify(req.body);
-    return { rawBody, body: req.body };
-  }
 
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
-  if (!chunks.length) {
-    return { rawBody: "", body: {} };
+  const rawBody = chunks.length ? Buffer.concat(chunks).toString("utf8") : "";
+  const parsedBody = safeParseJson(rawBody);
+  if (rawBody) {
+    return { rawBody, body: parsedBody };
   }
-  const rawBody = Buffer.concat(chunks).toString("utf8");
-  return { rawBody, body: safeParseJson(rawBody) };
+
+  if (req.body && typeof req.body === "object") {
+    // Best-effort fallback if body parsing already consumed the stream.
+    const fallbackRaw = JSON.stringify(req.body);
+    return { rawBody: fallbackRaw, body: req.body };
+  }
+
+  return { rawBody: "", body: {} };
 };
 
 const sendJson = (res: any, status: number, payload: Record<string, unknown>) => {
@@ -210,9 +213,10 @@ export default async function handler(req: any, res: any) {
     const tokenMatch = [headerToken, queryToken, bodyToken].some(
       (token) => token && token === KIWIFY_WEBHOOK_TOKEN
     );
+    const signatureTokenMatch = signature && signature === KIWIFY_WEBHOOK_TOKEN;
     const signatureMatch =
       !!signature && verifyHmacSignature(rawBody, signature, KIWIFY_WEBHOOK_TOKEN);
-    if (!tokenMatch && !signatureMatch) {
+    if (!tokenMatch && !signatureTokenMatch && !signatureMatch) {
       sendJson(res, 401, { error: "Invalid webhook token" });
       return;
     }
