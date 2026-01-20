@@ -154,10 +154,11 @@ export default async function handler(req: any, res: any) {
     (req.headers["x-kiwify-signature"] as string | undefined) ||
     (req.headers["authorization"] as string | undefined)?.replace("Bearer ", "");
   const queryToken = req.query?.token;
-  const bodyToken = body?.token || body?.webhook_token;
+  const querySignature = req.query?.signature;
+  const bodyToken = body?.token || body?.webhook_token || body?.signature;
 
   if (KIWIFY_WEBHOOK_TOKEN) {
-    const tokenMatch = [headerToken, queryToken, bodyToken].some(
+    const tokenMatch = [headerToken, queryToken, querySignature, bodyToken].some(
       (token) => token && token === KIWIFY_WEBHOOK_TOKEN
     );
     if (!tokenMatch) {
