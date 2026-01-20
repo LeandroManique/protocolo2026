@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, ViewState, UserProfile } from '../types';
-import { sendChatMessage } from '../services/geminiService';
+import { sendChatMessage } from '../services/openaiService';
 import { ArrowLeft, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 

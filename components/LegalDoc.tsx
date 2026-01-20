@@ -49,7 +49,7 @@ const LegalDoc: React.FC<LegalDocProps> = ({ setViewState, type }) => {
 
                     <h3>1. Aceitação Irrestrita</h3>
                     <p>
-                        Ao acessar e utilizar a plataforma "Arthur - O Estrategista" (o "Software"), o usuário concorda, sem ressalvas, com estes Termos de Uso. O Software utiliza Inteligência Artificial Generativa (Google Gemini 3 Flash) para processar dados e fornecer insights.
+                        Ao acessar e utilizar a plataforma "Arthur - O Estrategista" (o "Software"), o usuário concorda, sem ressalvas, com estes Termos de Uso. O Software utiliza Inteligência Artificial Generativa (OpenAI GPT-4o mini) para processar dados e fornecer insights.
                     </p>
 
                     <h3>2. Obrigação de Meio e Ausência de Garantia</h3>
@@ -82,7 +82,7 @@ const LegalDoc: React.FC<LegalDocProps> = ({ setViewState, type }) => {
 
                     <h3>2. Processamento de Dados via API</h3>
                     <p>
-                        Para a funcionalidade de IA, os inputs de texto e imagens (prints) são enviados de forma criptografada para a API do Google (Gemini). Estes dados são processados de forma <em>stateless</em> (sem estado) para gerar a resposta imediata e não são utilizados pelos desenvolvedores para treinamento de modelos proprietários ou vendidos a terceiros.
+                        Para a funcionalidade de IA, os inputs de texto e imagens (prints) são enviados de forma criptografada para a API da OpenAI (GPT-4o mini). Estes dados são processados de forma <em>stateless</em> (sem estado) para gerar a resposta imediata e não são utilizados pelos desenvolvedores para treinamento de modelos proprietários ou vendidos a terceiros.
                     </p>
 
                     <h3>3. Dados Sensíveis e Imagens</h3>

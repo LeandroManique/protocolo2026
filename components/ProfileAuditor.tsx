@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ViewState, ProfileAuditResult } from '../types';
-import { auditProfile } from '../services/geminiService';
+import { auditProfile } from '../services/openaiService';
 import { ArrowLeft, Search, CheckCircle, Sparkles, Fingerprint, Upload, Image as ImageIcon, X } from 'lucide-react';
 
 interface ProfileAuditorProps {

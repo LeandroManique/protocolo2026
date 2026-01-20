@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ViewState, SEOResult } from '../types';
-import { generateVideoMetadata } from '../services/geminiService';
+import { generateVideoMetadata } from '../services/openaiService';
 import { ArrowLeft, Hash, Type, Copy, Search, Tag, Check, Zap } from 'lucide-react';
 
 interface SEOOptimizerProps {

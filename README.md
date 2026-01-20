@@ -15,6 +15,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1RpVflm2uSWimlva4K0RgxE
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Set the `OPENAI_API_KEY` in [.env.local](.env.local) to your OpenAI API key
+3. For Vercel deployments, also set `OPENAI_API_KEY` in the project Environment Variables
+4. Run the app:
    `npm run dev`

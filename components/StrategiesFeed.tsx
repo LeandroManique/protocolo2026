@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ViewState } from '../types';
-import { fetchWeeklyStrategyUpdate } from '../services/geminiService';
+import { fetchWeeklyStrategyUpdate } from '../services/openaiService';
 import { ArrowLeft, FileText, Lock, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -13,7 +13,7 @@ const StrategiesFeed: React.FC<StrategiesFeedProps> = ({ setViewState }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching from the "Google Doc" (actually fetching live data via Gemini)
+    // Simulate fetching from the "Google Doc" (actually fetching live data via OpenAI)
     const loadData = async () => {
         const update = await fetchWeeklyStrategyUpdate();
         setContent(update);

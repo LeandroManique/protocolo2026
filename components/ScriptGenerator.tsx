@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewState } from '../types';
-import { generateViralScript, refineScript } from '../services/geminiService';
+import { generateViralScript, refineScript } from '../services/openaiService';
 import { ArrowLeft, Check, ChevronRight, Copy, RefreshCw, MessageSquare, Edit2, PlayCircle, BarChart2, Lightbulb, X, Zap, Clock, Users } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
