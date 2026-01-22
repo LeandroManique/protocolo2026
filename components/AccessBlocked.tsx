@@ -1,8 +1,8 @@
 import React from "react";
 import { ExternalLink, RefreshCw, LogOut, ShieldAlert } from "lucide-react";
 
-const CHECKOUT_MENSAL = "https://pay.kiwify.com.br/VAGjfBk";
-const CHECKOUT_ANUAL = "https://pay.kiwify.com.br/GAaTOPS";
+const CHECKOUT_MENSAL = "https://pay.kiwify.com.br/cNl8xfF";
+const CHECKOUT_ANUAL = "https://pay.kiwify.com.br/SImGRn4";
 
 interface AccessBlockedProps {
   email: string;
@@ -44,7 +44,7 @@ const AccessBlocked: React.FC<AccessBlockedProps> = ({
             target="_blank"
             rel="noreferrer"
           >
-            Assinar mensal
+            Assinar mensal · R$ 39,90
             <ExternalLink className="w-4 h-4" />
           </a>
           <a
@@ -53,7 +53,7 @@ const AccessBlocked: React.FC<AccessBlockedProps> = ({
             target="_blank"
             rel="noreferrer"
           >
-            Assinar anual
+            Assinar anual · R$ 297,00
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
