@@ -1,45 +1,37 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Mail, Key, ArrowRight, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "../services/supabaseClient";
 
 const AuthScreen: React.FC = () => {
-  const [mode, setMode] = useState<"magic" | "password">("magic");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
 
-  const handleMagicLink = async () => {
-    if (!email.trim()) {
-      setMessage({ type: "error", text: "Informe seu email." });
-      return;
-    }
-    setLoading(true);
+  useEffect(() => {
     setMessage(null);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin },
-    });
-    setLoading(false);
-    if (error) {
-      setMessage({ type: "error", text: error.message });
-      return;
+    if (mode === "signin") {
+      setConfirmPassword("");
     }
-    setMessage({ type: "ok", text: "Link enviado. Verifique seu email." });
-  };
+  }, [mode]);
 
   const handlePassword = async () => {
     if (!email.trim() || !password) {
       setMessage({ type: "error", text: "Preencha email e senha." });
       return;
     }
+    if (mode === "signup" && password !== confirmPassword) {
+      setMessage({ type: "error", text: "As senhas nao conferem." });
+      return;
+    }
     setLoading(true);
     setMessage(null);
-    const authFn = isSignUp
-      ? supabase.auth.signUp({ email: email.trim(), password })
-      : supabase.auth.signInWithPassword({ email: email.trim(), password });
-    const { error } = await authFn;
+    const { error } =
+      mode === "signup"
+        ? await supabase.auth.signUp({ email: email.trim(), password })
+        : await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
       setMessage({ type: "error", text: error.message });
@@ -47,7 +39,10 @@ const AuthScreen: React.FC = () => {
     }
     setMessage({
       type: "ok",
-      text: isSignUp ? "Conta criada. Verifique seu email." : "Login realizado.",
+      text:
+        mode === "signup"
+          ? "Senha criada. Confirme seu email para acessar."
+          : "Login realizado.",
     });
   };
 
@@ -62,24 +57,27 @@ const AuthScreen: React.FC = () => {
           <p className="text-gray-500 text-sm mt-2">
             Entre para acessar o app. Use o mesmo email da compra.
           </p>
+          <p className="text-gray-400 text-xs mt-2">
+            Primeiro acesso? Clique em <span className="font-semibold">Criar senha</span>.
+          </p>
         </div>
 
         <div className="flex gap-2 mb-6">
           <button
-            onClick={() => setMode("magic")}
+            onClick={() => setMode("signin")}
             className={`flex-1 text-xs font-bold uppercase tracking-widest py-3 border ${
-              mode === "magic" ? "border-black text-black" : "border-gray-200 text-gray-400"
+              mode === "signin" ? "border-black text-black" : "border-gray-200 text-gray-400"
             }`}
           >
-            Link
+            Entrar
           </button>
           <button
-            onClick={() => setMode("password")}
+            onClick={() => setMode("signup")}
             className={`flex-1 text-xs font-bold uppercase tracking-widest py-3 border ${
-              mode === "password" ? "border-black text-black" : "border-gray-200 text-gray-400"
+              mode === "signup" ? "border-black text-black" : "border-gray-200 text-gray-400"
             }`}
           >
-            Senha
+            Criar senha
           </button>
         </div>
 
@@ -100,36 +98,46 @@ const AuthScreen: React.FC = () => {
             </div>
           </div>
 
-          {mode === "password" && (
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
+              Senha
+            </label>
+            <div className="flex items-center border border-gray-200 px-3 py-3">
+              <Key className="w-4 h-4 text-gray-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="********"
+                className="ml-3 flex-1 outline-none text-sm"
+              />
+            </div>
+          </div>
+
+          {mode === "signup" && (
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
-                Senha
+                Confirmar senha
               </label>
               <div className="flex items-center border border-gray-200 px-3 py-3">
                 <Key className="w-4 h-4 text-gray-400" />
                 <input
                   type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="********"
                   className="ml-3 flex-1 outline-none text-sm"
                 />
               </div>
-              <button
-                onClick={() => setIsSignUp((prev) => !prev)}
-                className="mt-2 text-[10px] font-bold uppercase tracking-widest text-gray-400"
-              >
-                {isSignUp ? "Ja tenho conta" : "Criar conta"}
-              </button>
             </div>
           )}
 
           <button
-            onClick={mode === "magic" ? handleMagicLink : handlePassword}
+            onClick={handlePassword}
             disabled={loading}
             className="w-full bg-black text-white py-4 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            {loading ? "Enviando..." : "Continuar"}
+            {loading ? "Enviando..." : mode === "signup" ? "Criar senha" : "Entrar"}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
