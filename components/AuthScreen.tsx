@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Mail, Key, ArrowRight, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "../services/supabaseClient";
 
+const CHECKOUT_MENSAL = "https://pay.kiwify.com.br/cNl8xfF";
+const CHECKOUT_ANUAL = "https://pay.kiwify.com.br/SImGRn4";
+
 const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -59,6 +62,26 @@ const AuthScreen: React.FC = () => {
           </p>
           <p className="text-gray-400 text-xs mt-2">
             Primeiro acesso? Clique em <span className="font-semibold">Criar senha</span>.
+          </p>
+          <p className="text-gray-400 text-[11px] mt-2">
+            Ainda nao assinou?{" "}
+            <a
+              href={CHECKOUT_MENSAL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-black hover:underline"
+            >
+              Quero assinar
+            </a>{" "}
+            <span className="text-gray-300">·</span>{" "}
+            <a
+              href={CHECKOUT_ANUAL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-500 hover:text-black transition-colors"
+            >
+              anual
+            </a>
           </p>
         </div>
 
