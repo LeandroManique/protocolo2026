@@ -73,6 +73,15 @@ const AuthScreen: React.FC = () => {
             >
               Quero assinar
             </a>
+            <span className="text-gray-300"> · </span>
+            <a
+              href={CHECKOUT_ANUAL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-500 hover:text-black transition-colors"
+            >
+              Ver outras opcoes
+            </a>
           </p>
         </div>
 
