@@ -112,7 +112,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ setViewState }) => {
                 ? 'bg-black text-white rounded-br-none' 
                 : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
             }`}>
-              <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0 prose-ul:my-2 prose-headings:text-current">
+              <div
+                className={`prose prose-sm max-w-none prose-p:leading-relaxed prose-li:my-0 prose-ul:my-2 prose-headings:text-current ${
+                  msg.role === 'user' ? 'prose-invert text-white' : 'text-gray-800'
+                }`}
+              >
                 <ReactMarkdown>{msg.text}</ReactMarkdown>
               </div>
               
