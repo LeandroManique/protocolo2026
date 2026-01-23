@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowDown, ArrowLeft } from "lucide-react";
 import NewsHeader from "./news/NewsHeader";
+import OfficialHeadline from "./news/OfficialHeadline";
 import AlgorithmReport from "./news/AlgorithmReport";
 import GrowthLadder from "./news/GrowthLadder";
 import ViralHacks from "./news/ViralHacks";
@@ -45,6 +46,8 @@ const NewsPage: React.FC<NewsPageProps> = ({ onBack }) => {
             observados e o mapa de crescimento para o ciclo {currentYear}/{currentYear + 1}.
           </p>
         </section>
+
+        <OfficialHeadline />
 
         <div id="report">
           <AlgorithmReport />
