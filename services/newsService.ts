@@ -1,3 +1,5 @@
+import { fetchKnowledgeContext } from "./knowledgeService";
+
 type OpenAIMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -56,9 +58,15 @@ export const generateStrategicAdvice = async (
   temperature: number = 0.6
 ): Promise<string> => {
   try {
+    const knowledgeContext = await fetchKnowledgeContext(prompt);
     const text = await createChatCompletion({
       messages: [
-        { role: "system", content: SYSTEM_INSTRUCTION },
+        {
+          role: "system",
+          content: `${SYSTEM_INSTRUCTION}\n\nDIRETRIZ OFICIAL (PRIORIDADE): Use o relatorio oficial do TikTok como regra principal.\n\n${
+            knowledgeContext ? `TRECHOS DO RELATORIO:\n${knowledgeContext}` : ""
+          }`,
+        },
         { role: "user", content: prompt },
       ],
       temperature,

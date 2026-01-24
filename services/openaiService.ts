@@ -1,4 +1,5 @@
-﻿import { UserProfile } from "../types";
+import { UserProfile } from "../types";
+import { fetchKnowledgeContext } from "./knowledgeService";
 
 type OpenAIContentPart =
   | { type: "text"; text: string }
@@ -91,6 +92,7 @@ export const sendChatMessage = async (
   lastMessage: string,
   userProfile?: UserProfile | null
 ): Promise<{ text: string; sources: { title: string; uri: string }[] }> => {
+  const knowledgeContext = await fetchKnowledgeContext(lastMessage);
   // Dynamic System Instruction based on Profile Presence
   let effectiveSystemInstruction = SYSTEM_INSTRUCTION_BASE;
 
@@ -120,7 +122,12 @@ export const sendChatMessage = async (
   }));
 
   const messages: OpenAIMessage[] = [
-    { role: "system", content: effectiveSystemInstruction },
+    {
+      role: "system",
+      content: `${effectiveSystemInstruction}\n\nDIRETRIZ OFICIAL (PRIORIDADE): Use o relatorio oficial do TikTok como regra principal.\nSe houver conflito entre o relatorio e conhecimento geral, siga o relatorio.\n\n${
+        knowledgeContext ? `TRECHOS DO RELATORIO:\n${knowledgeContext}` : ""
+      }`,
+    },
     ...mappedHistory,
     { role: "user", content: lastMessage },
   ];
@@ -138,6 +145,9 @@ export const sendChatMessage = async (
 };
 
 export const generateViralScript = async (answers: any): Promise<string> => {
+  const knowledgeContext = await fetchKnowledgeContext(
+    `${answers.searchTerm} ${answers.niche} ${answers.audience}`
+  );
   const prompt = `
 ATUE COMO UM DIRETOR DE CRIAÇÃO DE UMA AGÊNCIA DE PUBLICIDADE DE ELITE (FOCADO EM TIKTOK).
 
@@ -157,6 +167,9 @@ ${parseInt(answers.followers) > 10000
 
 OBJETIVO:
 Criar um roteiro TÉCNICO, com direção de cena, posicionamento de câmera e fala exata.
+
+RELATORIO OFICIAL (PRIORIDADE):
+${knowledgeContext || "Sem trechos relevantes."}
 
 IMPORTANTE: Adicione uma linha em branco ou espaçamento claro entre cada ATO para facilitar a leitura.
 
@@ -216,6 +229,7 @@ FORMATO OBRIGATÓRIO DE SAÍDA (Markdown):
 };
 
 export const refineScript = async (currentScript: string, feedback: string): Promise<string> => {
+  const knowledgeContext = await fetchKnowledgeContext(feedback);
   const prompt = `
 ROTEIRO ATUAL:
 ${currentScript}
@@ -228,6 +242,9 @@ Reescreva o roteiro mantendo a estrutura TÉCNICA (Cena, Ação, Fala), mas apli
 Se o usuário pediu para mudar o tom, mude o tom. Se pediu para encurtar, encurte.
 MANTENHA O ESPAÇAMENTO ENTRE OS ATOS (linhas em branco) para clareza visual.
 Mantenha a formatação clara.
+
+RELATORIO OFICIAL (PRIORIDADE):
+${knowledgeContext || "Sem trechos relevantes."}
   `;
 
   try {
@@ -248,6 +265,7 @@ Mantenha a formatação clara.
 
 export const fetchWeeklyStrategyUpdate = async (): Promise<string> => {
   const prompt = "Quais são as 3 principais TRENDS ou MUDANÇAS no algoritmo do TikTok desta última semana? Responda em formato de 'Boletim Rápido' (bullet points, leitura escaneável, direto ao ponto). Nada de textos longos.";
+  const knowledgeContext = await fetchKnowledgeContext(prompt);
 
   try {
     const text = await createChatCompletion({
@@ -255,7 +273,8 @@ export const fetchWeeklyStrategyUpdate = async (): Promise<string> => {
         {
           role: "system",
           content:
-            "Você é o curador do 'Código Fonte'. Entregue apenas o ouro, formatado para leitura rápida em celular.",
+            "Você é o curador do 'Código Fonte'. Entregue apenas o ouro, formatado para leitura rápida em celular.\n\nDIRETRIZ OFICIAL (PRIORIDADE): Use o relatorio oficial do TikTok como regra principal.\n\n" +
+            (knowledgeContext ? `TRECHOS DO RELATORIO:\n${knowledgeContext}` : ""),
         },
         { role: "user", content: prompt },
       ],
@@ -276,6 +295,9 @@ export const auditProfile = async (profileData: {
   niche: string;
   image?: string;
 }): Promise<any> => {
+  const knowledgeContext = await fetchKnowledgeContext(
+    `${profileData.niche} ${profileData.handle} ${profileData.bio}`
+  );
   let promptText = "";
   let userContent: string | OpenAIContentPart[] = "";
 
@@ -324,6 +346,10 @@ Retorne JSON seguindo este schema:
   }
 }
   `;
+  promptText += `
+\nRELATORIO OFICIAL (PRIORIDADE):
+${knowledgeContext || "Sem trechos relevantes."}
+  `;
 
   if (profileData.image) {
     userContent = [
@@ -357,6 +383,7 @@ Retorne JSON seguindo este schema:
 };
 
 export const generateVideoMetadata = async (topic: string, niche: string): Promise<any> => {
+  const knowledgeContext = await fetchKnowledgeContext(`${topic} ${niche}`);
   const prompt = `
 Gere metadados de SEO para um vídeo de TikTok com alto potencial viral.
 
@@ -376,6 +403,9 @@ Retorne JSON:
   },
   "searchTerms": ["3 termos exatos que as pessoas digitam na busca para achar esse vídeo"]
 }
+
+RELATORIO OFICIAL (PRIORIDADE):
+${knowledgeContext || "Sem trechos relevantes."}
   `;
 
   try {
