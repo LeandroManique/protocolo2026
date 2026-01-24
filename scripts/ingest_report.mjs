@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import pdf from "pdf-parse";
 
 const INPUT = process.argv[2];
 const SOURCE = process.argv[3] || "tiktok_trends_2026";
@@ -76,7 +75,14 @@ const isPdf = buffer.slice(0, 4).toString("utf8") === "%PDF";
 let rawText = "";
 
 if (isPdf) {
-  const parsed = await pdf(buffer);
+  let pdfParse;
+  try {
+    ({ default: pdfParse } = await import("pdf-parse"));
+  } catch (error) {
+    console.error("O pacote pdf-parse nao esta instalado. Rode: npm install");
+    process.exit(1);
+  }
+  const parsed = await pdfParse(buffer);
   rawText = parsed.text || "";
 } else {
   rawText = buffer.toString("utf8");
