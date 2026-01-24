@@ -5,7 +5,7 @@ const INPUT = process.argv[2];
 const SOURCE = process.argv[3] || "tiktok_trends_2026";
 
 if (!INPUT) {
-  console.error("Uso: node scripts/ingest_report.mjs <caminho-ou-link-pdf> [source]");
+  console.error("Uso: node scripts/ingest_report.mjs <caminho-ou-link-pdf-ou-txt> [source]");
   process.exit(1);
 }
 
@@ -72,8 +72,15 @@ const createEmbeddings = async (inputs) => {
 };
 
 const buffer = await fetchBuffer(INPUT);
-const parsed = await pdf(buffer);
-const rawText = parsed.text || "";
+const isPdf = buffer.slice(0, 4).toString("utf8") === "%PDF";
+let rawText = "";
+
+if (isPdf) {
+  const parsed = await pdf(buffer);
+  rawText = parsed.text || "";
+} else {
+  rawText = buffer.toString("utf8");
+}
 const pages = rawText.includes("\f") ? rawText.split("\f") : [rawText];
 
 const chunks = [];
