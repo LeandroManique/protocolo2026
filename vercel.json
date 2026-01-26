@@ -17,6 +17,6 @@
     { "source": "/news/:path*", "destination": "/" }
   ],
   "crons": [
-    { "path": "/api/health", "schedule": "0 */12 * * *" }
+    { "path": "/api/health", "schedule": "0 * * * *" }
   ]
 }
