@@ -2,6 +2,7 @@ import React from "react";
 import { ArrowDown, ArrowLeft } from "lucide-react";
 import NewsHeader from "./news/NewsHeader";
 import OfficialHeadline from "./news/OfficialHeadline";
+import ReportGuidelines from "./news/ReportGuidelines";
 import AlgorithmReport from "./news/AlgorithmReport";
 import GrowthLadder from "./news/GrowthLadder";
 import ViralHacks from "./news/ViralHacks";
@@ -48,6 +49,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ onBack }) => {
         </section>
 
         <OfficialHeadline />
+        <ReportGuidelines />
 
         <div id="report">
           <AlgorithmReport />
