@@ -15,5 +15,8 @@
   "rewrites": [
     { "source": "/news", "destination": "/" },
     { "source": "/news/:path*", "destination": "/" }
+  ],
+  "crons": [
+    { "path": "/api/health", "schedule": "0 */12 * * *" }
   ]
 }
